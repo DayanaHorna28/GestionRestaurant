@@ -1,5 +1,4 @@
 import './app.css';
-import '../src/lib/styles/app.css';
 
 import App from './App.svelte';
 

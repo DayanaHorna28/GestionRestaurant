@@ -14,13 +14,7 @@
   import { onMount } from "svelte";
   import { watchResize } from "svelte-watch-resize";
 
-  import {
-    t,
-    Modal as Modalv2,
-    Modal,
-  } from "u-library-sass";
-
- 
+  import { t, Modal as Modalv2, Modal } from "u-library-sass";
 
   const conf = Configuration.getConfiguration();
   const urlParams = new URLSearchParams(window.location.search);
@@ -64,13 +58,7 @@
   let params = "";
   // let subModalOpened = "";
 
-
-
-  onMount(async () => {
-    
-  });
-
-
+  onMount(async () => {});
 
   const onLogin = async () => {
     getFavGames();
@@ -83,15 +71,10 @@
     //location.reload();
   };
 
-
-
-
   const onCloseGameModal = async () => {
     let data = await backend.getBalance(user.agregatorToken);
     user.balance = data.balance;
   };
-
-
 
   let loginModalOpen = false;
   let signupModalOpen = false;
@@ -105,13 +88,9 @@
       document.body.removeAttribute("style");
     }, 100);
   };
-
-
-  
 </script>
 
 <div class="main-wrapper" use:watchResize={resizeIframe}>
-  
   <TopBar
     bind:loginModalOpen
     bind:signupModalOpen
@@ -128,10 +107,8 @@
     {onCategoryChange}
     {onOpenPromotions}
   />
-  
+
   <div class="main-content">
-
-
     {#if active_view == "home"}
       <HomePage
         bind:loginModalOpen
@@ -150,11 +127,9 @@
         {onOpenPromotions}
         {onOpenProviders}
       />
-   {/if}
+    {/if}
   </div>
 </div>
-
-
 
 <style>
   @media only screen and (max-width: 1200px) {
