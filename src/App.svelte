@@ -12,11 +12,15 @@
   import EventManager from "./js/EventManager";
   import NvscoreSplashScreen from "./lib/components/NvscoreSplashScreen.svelte";
   import Notifier from "./lib/components/Notify.svelte";
+  import Menu from "./lib/components/Menu/Menu.svelte";
+  import Insumos from "./pages/Insumos.svelte";
 
   let userState = "";
   let authenticated;
   let user;
   let showMainLoading = false;
+  let menuVisible = true;
+  let active_view = "Insumos";
 
   onMount(async () => {
     checkUserIsLogged();
@@ -83,13 +87,39 @@
       alertify.error("Error", error);
     }
   };
+
+  const hideMenu = () =>{
+		let sidebar = document.querySelectorAll(".side-menu")
+		sidebar[0].classList.toggle("close")
+
+		let navbar = document.querySelectorAll(".customNavBar")
+		navbar[0].classList.toggle("close")
+		menuVisible = !menuVisible
+  }
+
+  const logout = ()=>{
+		location.reload();
+	}
+
+  const onCategoryChange = async (cat) => {
+    console.log("category", cat);
+    active_view = cat;
+    console.log("active_view", active_view);
+    
+  };
   
 </script>
 
-{#if authenticated}
+{#if !authenticated}
   <div class="bo-main-wrapp">
-    <TopBar {onLogout} bind:userLoged={user} />
-    <HomePage bind:userLoged={user} {onLogout}  />
+    <Menu bind:menuVisible bind:active_view {onCategoryChange} {hideMenu} {onLogout}></Menu>
+    <div class="customNavBar wrapp-home">
+      {#if active_view == "reports"}
+        <HomePage bind:userLoged={user} {onLogout}  />
+      {:else if active_view == "Insumos"}
+        <Insumos></Insumos>
+      {/if}
+    </div>
   </div>
 {:else}
   <Login {onLogin} />
@@ -97,9 +127,18 @@
 
 <Notifier />
 
-<NvscoreSplashScreen bind:showMainLoading/>
 
 <style>
+  .wrapp-home{
+    background-color: #2b283b;
+    height: 100vh;
+  }
+  .customNavBar{
+		position: relative;
+		left: 15.625rem;
+		width: calc(100% - 15.625rem);
+		transition: all 0.5s ease;
+	}
   @media (max-width: 1199px) {
     .bo-main-wrapp {
       display: flex;

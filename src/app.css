@@ -15,6 +15,17 @@
 .money{
     text-align: right;
 }
+.side-menu.close {
+    width: 4.875rem !important;
+    transition: all 0.4s ease !important;
+}
+
+.customNavBar.close {
+    position: relative !important;
+    left: 4.875rem !important;
+    width: calc(100% - 4.875rem) !important;
+    transition: all 0.5s ease !important;
+}
  @media only screen and (max-width: 1200px) {
 
      :root {

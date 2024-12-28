@@ -6,14 +6,21 @@
   import TrxUser from "../lib/components/players/History.svelte";
   import { onMount } from "svelte";
   import moment from "moment";
+  import Menu from "../lib/components/Menu/Menu.svelte";
+
   export let userLoged;
+
 
   let showModalPlayer = false;
   let refreshList = false;
   let player;
+  
   let showTableUsers = true;
 
+
   onMount(() => {});
+
+  
 
   const onShowModalPlayer = (item) => {
     if (!item)
@@ -42,11 +49,12 @@
 </script>
 
 <div class="home-page">
-  <MenuAction {onShowModalPlayer} bind:userLoged />
-
-  {#if showTableUsers}
-    <TableUser bind:userLoged bind:refreshList  {onShowModalPlayer} />
-  {/if}
+  
+  <div>
+    {#if showTableUsers}
+      <TableUser bind:userLoged bind:refreshList  {onShowModalPlayer} />
+    {/if}
+  </div>
 </div>
 
 {#if showModalPlayer}
