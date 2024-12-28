@@ -47,7 +47,7 @@
     </li>
     <li>
       <div class="icon-link">
-        <button class="btn-link {active_view == 'Configuracion'? 'u-category-select' : ''}">
+        <button on:click={() => onCategoryChange("Pedidos")} class="btn-link {active_view == 'Pedidos'? 'u-category-select' : ''}">
           <i class={`bi bi-gear icon`}></i>
           <span class="link_name">Configuración</span>
         </button>

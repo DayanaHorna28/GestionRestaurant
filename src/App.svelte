@@ -16,6 +16,7 @@
   import Insumos from "./pages/Insumos.svelte";
   import Notifications from "./pages/Notifications.svelte";
   import Calendar from "./pages/Calendar.svelte";
+  import PedidosPlatos from "./pages/PedidosPlatos.svelte";
 
   let userState = "";
   let authenticated;
@@ -124,6 +125,8 @@
         <Notifications></Notifications>
       {:else if active_view == "calendar"}
        <Calendar></Calendar>
+      {:else if active_view == "Pedidos"}
+       <PedidosPlatos></PedidosPlatos>
       {/if}
     </div>
   </div>
