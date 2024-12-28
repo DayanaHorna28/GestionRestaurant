@@ -1,9 +1,5 @@
 <script>
   // @ts-nocheck
-  import UserForm from "../lib/components/players/UserForm.svelte";
-  import MenuAction from "../lib/components/Menu/MenuAction.svelte";
-  import TableUser from "../lib/components/tables/TableUser.svelte";
-  import TrxUser from "../lib/components/players/History.svelte";
   import { onMount } from "svelte";
   import moment from "moment";
   import Menu from "../lib/components/Menu/Menu.svelte";
@@ -49,17 +45,7 @@
 </script>
 
 <div class="home-page">
-  
-  <div>
-    {#if showTableUsers}
-      <TableUser bind:userLoged bind:refreshList  {onShowModalPlayer} />
-    {/if}
-  </div>
 </div>
-
-{#if showModalPlayer}
-  <UserForm bind:userLoged bind:player bind:showModalPlayer listPlayers={() => {refreshList = true}} />
-{/if}
 
 <style>
 

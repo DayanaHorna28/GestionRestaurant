@@ -34,7 +34,7 @@
 
     <!-- Filters -->
     <div class="filters">
-      <input type="text" placeholder="Buscar..." class="search" />
+      <input placeholder="Buscar..." class="search" />
       <button on:click={toggleAddProductForm} class="add-btn">+ AGREGAR</button>
     </div>
 
@@ -71,19 +71,37 @@
             <div class="barcode">📠 Escanee el QR del Producto</div>
             <form>
             <div class="form-group">
-                <input type="text" placeholder="ID PRODUCTO" />
-                <input type="text" placeholder="CANTIDAD" />
+              <div class="col">
+                <span>ID PRODUCTO</span>
+                <input placeholder="ID PRODUCTO" />
+              </div>
+              <div class="col">
+                <span>CANTIDAD</span>
+                <input placeholder="CANTIDAD" />
+              </div>
             </div>
             <div class="form-group">
-                <input type="text" placeholder="TÍTULO PRODUCTO" />
-                <input type="text" placeholder="UNIDAD" />
+              <div class="col">
+                <span>TITULO PRODUCTO</span>
+                <input placeholder="TÍTULO PRODUCTO" />
+              </div>
+              <div class="col">
+                <span>UNIDAD</span>
+                <input placeholder="UNIDAD" />
+              </div>
             </div>
             <div class="form-group">
-                <input type="text" placeholder="COSTE PRODUCTO" />
+              <div class="col">
+                <span>COSTE PRODUCTO</span>
+                <input placeholder="COSTE PRODUCTO" />
+              </div>
+              <div class="col">
+                <span>SECCIÓN</span>
                 <select>
                 <option>SELECCIONAR SECCIÓN</option>
                 <!-- Agregar más opciones -->
                 </select>
+              </div>
             </div>
             <button type="submit" class="submit-btn">AGREGAR</button>
             <button type="button" class="cancel-btn" on:click={toggleAddProductForm}>CANCELAR</button>
@@ -96,6 +114,9 @@
 
 <style>
   /* General Layout */
+  input{
+    width: 100%;
+  }
   .container-insumos {
     display: flex;
     height: 100vh;
@@ -109,14 +130,15 @@
   }
 
   .header {
-    font-size: 1.5rem;
-    margin-bottom: 20px;
+    font-size: 2.5rem;
+    font-weight: bolder;
+    margin-bottom: 1rem;
   }
 
   .stats {
     display: flex;
     gap: 20px;
-    margin-bottom: 20px;
+    padding: 1rem 7rem;
   }
 
   .card {
@@ -128,15 +150,15 @@
   }
 
   .card.green {
-    background-color: #28a745;
+    background-color: #1F1D2B;
   }
 
   .card.red {
-    background-color: #dc3545;
+    background-color: #1F1D2B;
   }
 
   .card.blue {
-    background-color: #007bff;
+    background-color: #1F1D2B;
   }
 
   .filters {
@@ -165,7 +187,7 @@
   table {
     width: 100%;
     border-collapse: collapse;
-    background: #222;
+    background: #1F1D2B;
     border-radius: 8px;
     overflow: hidden;
   }
@@ -176,7 +198,7 @@
   }
 
   th {
-    background: #333;
+    background: #1F1D2B;
   }
 
   td {
@@ -215,7 +237,7 @@
     background: #222;
     padding: 20px;
     border-radius: 8px;
-    width: 400px;
+    width: 700px;
   }
 
   .form-group {

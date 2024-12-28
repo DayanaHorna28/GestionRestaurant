@@ -8,15 +8,14 @@
   import backend from "./server.js";
   import Login from "./lib/components/Login.svelte";
   import TopBar from "./lib/components/NavBar/TopBar.svelte";
-  //import SocketConnector from "./js/socket";
   import EventManager from "./js/EventManager";
-  import NvscoreSplashScreen from "./lib/components/NvscoreSplashScreen.svelte";
   import Notifier from "./lib/components/Notify.svelte";
   import Menu from "./lib/components/Menu/Menu.svelte";
   import Insumos from "./pages/Insumos.svelte";
   import Notifications from "./pages/Notifications.svelte";
   import Calendar from "./pages/Calendar.svelte";
   import PedidosPlatos from "./pages/PedidosPlatos.svelte";
+  import StatusPersonal from "./pages/StatusPersonal.svelte";
 
   let userState = "";
   let authenticated;
@@ -118,7 +117,7 @@
     <Menu bind:menuVisible bind:active_view {onCategoryChange} {hideMenu} {onLogout}></Menu>
     <div class="customNavBar wrapp-home">
       {#if active_view == "reports"}
-        <HomePage bind:userLoged={user} {onLogout}  />
+        <StatusPersonal></StatusPersonal>
       {:else if active_view == "Insumos"}
         <Insumos></Insumos>
       {:else if active_view == "notifications"}
@@ -139,7 +138,7 @@
 
 <style>
   .wrapp-home{
-    background-color: #2b283b;
+    background-color: #5d587c;
     height: 100vh;
   }
   .customNavBar{
