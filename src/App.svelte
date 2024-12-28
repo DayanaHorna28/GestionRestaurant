@@ -1,140 +1,119 @@
 <script>
-	import alertify from 'alertifyjs';
-  import ProvidersReportsPage from "./pages/ProvidersReportsPage.svelte";
-  import ClientsReportsPage from "./pages/ClientsReportsPage.svelte";
-  import TrxManualPage from "./pages/TrxManualPage.svelte";
-  import TrxPage from "./pages/TrxPage.svelte";
-  import AdminPage from "./pages/AdminPage.svelte";
-  import ClientsPage from "./pages/ClientsPage.svelte";
-  import BrandsPage from "./pages/BrandsPage.svelte";
-  import PlayersPage from "./pages/PlayersPage.svelte";
-  import GamesPage from "./pages/GamesPage.svelte";
-  import TopBar from "./lib/TopBar.svelte";
-  import { onMount } from "svelte";
-
-  import Login from "./lib/components/Login.svelte";
-  import util from "./js/util";
+  // @ts-nocheck
   import HomePage from "./pages/HomePage.svelte";
-  import Menu from "./lib/components/menu/Menu.svelte";
-  import MondayPage from "./pages/MondayPage.svelte";
-  import BonusFirstPage from './pages/BonusFirstPage.svelte';
-  import FreeBetFirstPage from './pages/FreeBetFirstPage.svelte';
+  import { onMount } from "svelte";
+  import "alertifyjs/build/css/alertify.css";
+  import "alertifyjs/build/css/themes/default.min.css";
+  import alertify from "alertifyjs";
+  import backend from "./server.js";
+  import Login from "./lib/components/Login.svelte";
+  import TopBar from "./lib/components/NavBar/TopBar.svelte";
+  //import SocketConnector from "./js/socket";
+  import EventManager from "./js/EventManager";
+  import NvscoreSplashScreen from "./lib/components/NvscoreSplashScreen.svelte";
+  import Notifier from "./lib/components/Notify.svelte";
 
-
-  let authenticated = false;
-  let user = {};
-  let mainPromise;
-  let active_view = "home";
-
+  let userState = "";
+  let authenticated;
+  let user;
+  let showMainLoading = false;
 
   onMount(async () => {
-    mainPromise = checkUserIsLogged();
+    checkUserIsLogged();
   });
 
   const checkUserIsLogged = async () => {
-    return new Promise((resolve, reject) => {
-      user = null;
-      let now = new Date();
-      let userStorage = sessionStorage.getItem("user");
-      if (userStorage) {
-        userStorage = JSON.parse(userStorage);
-        let expireTokenDate = new Date(userStorage.expireToken);
-        const diffTime = expireTokenDate - now;
-        if (diffTime > 0) {
-          user = userStorage;
-          authenticated = true;
-        } else {
-          alertify.warning("ADVERTENCIA su sesión a caducado");
-          sessionStorage.removeItem("user");
-          authenticated = false;
-        }
-      }
-      resolve(true);
-    });
+    user = null;
+    const u = sessionStorage.getItem("user");
+    if (u) {
+      let user_ = JSON.parse(u);
+      let expireTokenDate = new Date(user_.tokenExp);
+      authenticated = true;
+      user = user_;
+      console.log("authenticated", user);
+      let balanceUser = await backend.wallet.balance(user_.userId);
+      //SocketConnector.connect(user_.platformId,user_);
+      user.balance = balanceUser.data.balance;
+      userState = "loggedIn";
+    } else {
+      sessionStorage.removeItem("user");
+    }
   };
 
-  function onLogin(data) {
+  const onLogout = () => {
+    alertify.confirm(
+      "Cuidado",
+      `Seguro de <b>Cerrar Sesión</b>?`,
+      () => {
+        try {
+          sessionStorage.removeItem("user");
+          authenticated = false;
+          alertify.success("Procesado!");
+        } catch (error) {
+          alertify.error("Error al Cerrar Sesión");
+        }
+      },
+      () => {}
+    );
+  };
+
+  EventManager.subscribe("duplicated_session", () => {
+    console.log("Sesssion duplicada");
+    showMainLoading = true;
+    EventManager.publish("notify", {
+      mode: "error",
+      msg: "SESION DUPLICADA!",
+    });
+    sessionStorage.removeItem("user");
+    setTimeout(() => {
+      location.reload();
+    }, 3000);
+  });
+
+  const onLogin = async (data) => {
     try {
       user = data;
-      let token_ = util.parseJwt(user.access_token);
-      user.expireToken = new Date(token_.exp * 1000);
-      sessionStorage.setItem("user", JSON.stringify(user));
-      sessionStorage.setItem("token", user.access_token);
+      let balanceUser = await backend.wallet.balance(data.userId);
+      user.balance = balanceUser.data.balance;
+      console.log("balance",balanceUser.data.balance);
       authenticated = true;
+      //econta a socket
+      //SocketConnector.connect(user.username)
     } catch (error) {
       alertify.error("Error", error);
     }
-  }
-
-  const onLogout = () => {
-    alertify.confirm("Cuidado",`Seguro de <b>Cerrar Sesión</b>?`, () => {
-      try {
-        sessionStorage.removeItem("user");
-        authenticated = false;
-        alertify.success("Procesado!");
-      } catch (error) {
-        alertify.error("Error al Cerrar Sesión");
-      }
-    },() => {});
   };
-
-  const onCategoryChange = async (cat) => {
-    active_view = cat;
-  };
+  
 </script>
 
-<div class="bo-main-wrapp">
-  {#await mainPromise}
-    Cargando...
-  {:then d}
-    {#if authenticated}
-      <div class="body-wrapp">
-        <TopBar userLoged={user} {onLogout} />
-        <Menu bind:active_view {onCategoryChange}></Menu>
-        {#if active_view == "home"}
-          <HomePage></HomePage>
-        {:else if active_view == "games"}
-          <GamesPage></GamesPage>
-        {:else if active_view == "brands"}
-          <BrandsPage></BrandsPage>
-        {:else if active_view == "clients"}
-          <ClientsPage></ClientsPage>
-        {:else if active_view == "users"}
-          <PlayersPage></PlayersPage>
-        {:else if active_view == "admins"}
-          <AdminPage></AdminPage>
-        {:else if active_view == "transactions"}
-          <TrxPage></TrxPage>
-        {:else if active_view == "direct_trx"}
-          <TrxManualPage></TrxManualPage>
-        {:else if active_view == "provider"}
-          <ProvidersReportsPage></ProvidersReportsPage>
-        {:else if active_view == "client"}
-          <ClientsReportsPage></ClientsReportsPage>
-        {:else if active_view == "monday"}
-          <MondayPage></MondayPage>
-        {:else if active_view == "bonus"}
-          <BonusFirstPage></BonusFirstPage> 
-        {:else if active_view == "freebet"}
-          <FreeBetFirstPage></FreeBetFirstPage> 
-        {/if}
-      </div>
-    {:else if mainPromise != undefined}
-      <Login {onLogin} />
-    {/if}
-  {/await}
-</div>
+{#if authenticated}
+  <div class="bo-main-wrapp">
+    <TopBar {onLogout} bind:userLoged={user} />
+    <HomePage bind:userLoged={user} {onLogout}  />
+  </div>
+{:else}
+  <Login {onLogin} />
+{/if}
+
+<Notifier />
+
+<NvscoreSplashScreen bind:showMainLoading/>
 
 <style>
-  .bo-main-wrapp {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    height: 100%;
-    width: 100%;
+  @media (max-width: 1199px) {
+    .bo-main-wrapp {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      width: 100%;
+    }
   }
-  .body-wrapp {
-    width: 100%;
-    height: 100%;
+  @media (min-width: 1200px) {
+    .bo-main-wrapp {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      width: 100%;
+    }
   }
 </style>

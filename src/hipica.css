@@ -1,0 +1,8 @@
+.event-carrera::before {
+    background-color: yellow !important;
+}
+.body-margin {
+    padding-top: 0;
+    padding: 0.2rem 0.5rem;
+    background: red !important;
+}
