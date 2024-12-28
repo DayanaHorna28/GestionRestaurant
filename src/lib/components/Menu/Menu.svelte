@@ -58,9 +58,9 @@
     <ul class="nav-links">
     <li>
       <div class="icon-link">
-        <button on:click={() => onCategoryChange("sonsu")} class="btn-link {active_view == 'cons'? 'u-category-select' : ''}" >
+        <button on:click={() => onCategoryChange("notifications")} class="btn-link {active_view == 'notifications'? 'u-category-select' : ''}" >
           <i class="bi bi-chat-text"></i>
-          <span class="link_name">Consultas</span>
+          <span class="link_name">Notificaciones</span>
         </button>
       </div>
     </li>

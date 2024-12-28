@@ -14,6 +14,7 @@
   import Notifier from "./lib/components/Notify.svelte";
   import Menu from "./lib/components/Menu/Menu.svelte";
   import Insumos from "./pages/Insumos.svelte";
+  import Notifications from "./pages/Notifications.svelte";
 
   let userState = "";
   let authenticated;
@@ -118,6 +119,8 @@
         <HomePage bind:userLoged={user} {onLogout}  />
       {:else if active_view == "Insumos"}
         <Insumos></Insumos>
+      {:else if active_view == "notifications"}
+        <Notifications></Notifications>
       {/if}
     </div>
   </div>
