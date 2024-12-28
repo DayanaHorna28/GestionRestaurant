@@ -47,8 +47,8 @@
 <div class="bo-login-wrapp">
   <div class="auth">
       <div class="data-fields">
-        <h3 class="center"><b>INICIO DE SESIÓN</b></h3>
-        <div>
+        <h3 style="display: flex; align-items: center; text-align:center;"><b>INICIO DE SESIÓN</b></h3>
+        <div style="width: 100%;">
           <span>USUARIO:</span>
           <input
             id='username-txt'
@@ -59,7 +59,7 @@
             autocapitalize="off"
           />
         </div>
-        <div>
+        <div style="width: 100%;">
           <span>CONTRASEÑA:</span>
           <div class="password">
             <input id='pass-txt' type={showPassword ? "text" : "password"} placeholder="Contraseña" on:keypress={loginEnter} on:input={dataPassword} autocorrect="off" autocapitalize="off" />
@@ -67,7 +67,7 @@
           </div>
         </div>
 
-        <button on:click={login} disabled={loadLogin} class="btn btn-sm form-control-border">
+        <button class="btn-login" on:click={login} disabled={loadLogin}>
           {#if loadLogin}
             <div class="loading">
               Cargando...
@@ -128,7 +128,9 @@
   .auth {
     padding: 1rem;
     gap: 10px;
-    max-width: 500px; /* Limita el ancho del contenedor en pantallas grandes */
+    min-width: 500px;
+    min-height: 500px;
+    max-width: 700px; /* Limita el ancho del contenedor en pantallas grandes */
     color: white;
     border-radius: 0.3rem;
     background: #000000c9;
@@ -137,17 +139,20 @@
     align-items: center;
   }
 
-  button {
+  .btn-login {
     color: white;
     background: #A42813;
+    padding: 0.5rem;
+    border: none;
+    border-radius: 0.5rem;
+    width: 100%;
   }
-  button:hover {
-    box-shadow: 1px 1px 3px #690c0c;
+  .btn-login:hover {
     background: #690c0c;
   }
   .data-fields {
     width: 80%;
-    height: 100%;
+    height: 500px;
     display: flex;
     flex-direction: column;
     gap: 0.8rem;
