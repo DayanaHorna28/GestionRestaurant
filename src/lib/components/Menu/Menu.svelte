@@ -39,7 +39,7 @@
     </li>
     <li>
       <div class="icon-link">
-        <button on:click={() => onCategoryChange("help")} class="btn-link {active_view == 'help'? 'u-category-select' : ''}">
+        <button on:click={() => onCategoryChange("calendar")} class="btn-link {active_view == 'calendar'? 'u-category-select' : ''}">
           <i class={`bi bi-chat icon`}></i>
           <span class="link_name">Asistencia</span>
         </button>
