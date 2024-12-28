@@ -1,11 +1,18 @@
-import './app.css';
-
+import './app.css'
 import App from './App.svelte';
+import 'alertifyjs/build/css/alertify.css';           // Importa los estilos principales de AlertifyJS
+import 'alertifyjs/build/css/themes/default.min.css'; // Importa el tema de AlertifyJS
+import alertify from 'alertifyjs';                    // Importa la funcionalidad de AlertifyJS
 
-let app;
-
-  app = new App({ target: document.getElementById('app') });
-
+// Puedes configurar alertify de manera global aquí, si lo necesitas.
+alertify.set('notifier', 'position', 'bottom-right');    // Configura la posición de las notificaciones, por ejemplo.
 
 
-export default app
+const app = new App({
+	target: document.body,
+	props: {
+		name: 'world'
+	}
+});
+
+export default app;

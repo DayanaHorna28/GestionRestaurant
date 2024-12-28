@@ -2,322 +2,418 @@ import Configuration from "./config"
 import util from "./js/util"
 import axios from "axios"
 
-const conf=Configuration.getConfiguration()
+let conf;
 
-const headers = {"Content-Type":"application/json;charset=UTF-8", "clientAuth":conf.CLIENT_AUTH, "client":conf.CLIENT_CODE}
+try {
+    conf = Configuration.getConfiguration();
+    console.log(conf);
+} catch (error) {
+    console.log(error);
+}
 
-const ServerConnection = (() => {
+const serverConnection = (() => {
 
 
+    let headers = { "Content-Type": "application/json;charset=UTF-8" }
 
-    const getGamesTypes = (clientid)=>{
-         let mode = "wb";
-        return new Promise( (result, reject)=>{
-        fetch(`${conf.API_GAMES_NODE}/lobby/gameTypesByClient?cat=slot&type=${mode}&client=${clientid}`,  {method:"GET",headers} )
-        .then(response => response.json())
-            .then( data =>{result(data)})   
-            .catch( (e)=>{ reject(e) } )
-        } )
-        //https://lobby-test.apiusoft.com/gameTypes?c=slot
-    }
-    
-    const authInGame = (agregatorToken) =>{
-        return new Promise( (result, reject)=>{
-            fetch(conf.API+`/authInGame/${agregatorToken}`,{method:"GET",headers})
-            .then(response => response.json())
-            .then( data =>{result(data)})   
-            .catch( (e)=>{ reject(e) } )
-        })
-    }
-
-    const login = (username,password)=>{
-        return new Promise( (result, reject)=>{
-            let payload = {
-                "username":username,
-                "password":password
-            }
-            //fetch( BACKEND,{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"}, body:payload } )
-            fetch(conf.API+"/login",{method:"POST",headers, body: JSON.stringify(payload) })
-            .then(async(response) => { if(response.status!=200) throw await response.json(); else return response;})
-            .then(response => response.json())
-            .then( data =>{result(data)})   
-            .catch( (e)=>{  console.log("eeee", e); reject(e) } )
-        })
+    const login = async (username, password) => {
+        let payload = { username, password }
+        return axios.post(`${conf.API}/adminusers/login`, payload);
     };
 
-    const saveMyAccount =(user) =>{
-        console.log(user);
-        var payload = user;
-        var user_storage = JSON.parse(sessionStorage.getItem("user" )) 
-        payload.token= user_storage.token;
-        payload.agregatorToken = user_storage.agregatorToken;
-        return new Promise( (result, reject)=>{
-            fetch(conf.API+"/user/myAccount",{method:"POST",headers, body:JSON.stringify(payload)} )
-            .then(response => response.json())
-            .then( data =>{result(data)})   
-            .catch( (e)=>{ reject(e) } )
-        } )
-    };
+    const client = {
+        list: async (params = "") => {
+            headers.Authorization = "Bearer " + sessionStorage.getItem("token");
+            if (params) { params = util.serialize(params) }
+            return axios.get(`${conf.API}/clients?${params}`, { headers });
+        },
+        save: async (payload) => {
+            headers.Authorization = "Bearer " + sessionStorage.getItem("token");
+            return axios.post(`${conf.API}/clients`, payload, { headers });
+        },
+        remove: async (id) => {
+            headers.Authorization = "Bearer " + sessionStorage.getItem("token");
+            return axios.delete(`${conf.API}/clients/${id}`, { headers });
+        },
+        checkProviderCredential: async (params) => {
+            headers.Authorization = "Bearer " + sessionStorage.getItem("token");
+            params = util.serialize(params)
+            return axios.get(`${conf.APIUSERS}/clients/checkProviderCredential?${params}`, { headers });
+        },
+        checkClientCredential: async (payload) => {
+            headers.Authorization = "Bearer " + sessionStorage.getItem("token");
+            console.log("Checking client c redentials", payload);
+            return axios.post(`${conf.API}/games/client/${payload.client_id}/provider/${payload.provider}/currency/${payload.currency}/checkCredentialsGames`, payload, { headers });
+        },
+        listCredentialsGames: async () => {
+            headers.Authorization = "Bearer " + sessionStorage.getItem("token");
+            return axios.get(`${conf.API}/secrets`, { headers});
+        },
+        saveCredentials: async (payload, section) => {
+            headers.Authorization = "Bearer " + sessionStorage.getItem("token");
+            headers.section = section;
+            return axios.post(`${conf.API}/secrets`, payload, { headers });
+        },
+        deleteCredentials: async (payload) => {
+            headers.Authorization = "Bearer " + sessionStorage.getItem("token");
+            headers.section = payload.section;
+            return axios.delete(`${conf.API}/secrets?secretName=${payload.keyId}`, { headers });
+        },
+        listCarrusels: async (params) =>{
+            headers.Authorization = "Bearer " + sessionStorage.getItem("token");
+            let query = util.serialize(params)
+            return axios.get(`${conf.API}/banners?${query}`, { headers });
+        },
+        saveCarrusel: async (payload) => {
+            headers.Authorization = "Bearer " + sessionStorage.getItem("token");
+            headers["Content-Type"] = "multipart/form-data";
+            return axios.post(`${conf.API}/banners`, payload, { headers });
+        },
+        deleteCarrusel: async (params) => {
+            headers.Authorization = "Bearer " + sessionStorage.getItem("token");
+            if (params) { params = util.serialize(params) }
+            return axios.delete(`${conf.API}/banners?${params}`, { headers });
+        },
+        listTopGames: async (params) => {
+            headers.Authorization = "Bearer " + sessionStorage.getItem("token");
+            let query = util.serialize(params);
+            return axios.get(`${conf.API}/topGame?${query}`, { headers });
+        },
+        saveGamesPosition: async (payload) => {
+            headers.Authorization = "Bearer " + sessionStorage.getItem("token");
+            return axios.post(`${conf.API}/topGame`, payload, { headers });
+        },
+        listSections: async () => {
+            headers.Authorization = "Bearer " + sessionStorage.getItem("token");
+            return axios.get(`${conf.API}/section`, { headers });
 
-    const getMyAccount = (userToken)=>{
-        return new Promise( (result, reject)=>{
-            fetch( conf.API+"/myaccount/"+userToken,{method:"GET" } )
-            .then(response => response.json())
-            //.then( data =>{result(data)}) 
-            .then( data =>{ if(data.errorCode){ checkReject(data).then(r=> reject(r) ) } else result(data)})   
-            .catch( (e)=>{ reject(e) } )
-            //setTimeout(()=>{ result( {token:'123456789qwerty'} ) },1000);
-        })
-    }
-
-    const getPaymethods = (userToken)=>{
-        return new Promise( (result, reject)=>{
-            fetch( conf.API+"/paymethods/"+userToken,{method:"GET" } )
-            .then(response => response.json())
-            //.then( data =>{result(data)})  
-            .then( data =>{ if(data.errorCode){ reject(data) } else result(data)})    
-            .catch( (e)=>{ reject(e) } )
-        })
-    }
-    const getPayLink = (token, amount, type)=>{
-        return new Promise( (result, reject)=>{
-            fetch( conf.API+"/getpaylink/", {method:"POST",headers, body:JSON.stringify({token, amount, type})}  )
-            .then(response => response.json())
-            .then( data =>{result(data)})   
-            .catch( (e)=>{ reject(e) } )
-        })
-    }
-
-    const withdrawal= (token, amount, bank, account, info)=>{
-        return new Promise( (result, reject)=>{
-            let payload = {token, amount, bank, account, info}
-            fetch(conf.API+"/withdrawal",{method:"POST",headers, body: JSON.stringify(payload) })
-            .then(response => response.json())
-            .then( data =>{ if(data.errorCode){ reject(data) } else result(data)})    
-            .catch( (e)=>{ reject(e) } )
-        })
-    }
-
-    const bankDeposit=(token,bankDeposit )=>{
-        return new Promise( (result, reject)=>{
-            let payload = {...bankDeposit, token}
-            fetch(conf.API+"/wallet/bankDeposit",{method:"POST",headers, body: JSON.stringify(payload) })
-            .then(response => response.json())
-            .then( data =>{ if(data.errorCode){ reject(data) } else result(data)})    
-            .catch( (e)=>{ reject(e) } )
-        })
-    }
-
-    const changePassword = (userToken, newPassword, oldpass)=>{
-        return new Promise( (result, reject)=>{
-            let payload = {
-                userToken,
-                newPassword,
-                oldpass
-            }
-            //fetch( BACKEND,{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"}, body:payload } )
-            fetch(conf.API+"/changepassword",{method:"POST",headers, body: JSON.stringify(payload) })
-            .then(response => response.json())
-            .then( data =>{result(data)})   
-            .catch( (e)=>{ reject(e) } )
-        })
-    }
-
-    const sendPassword = (email)=>{
-        return new Promise( (result, reject)=>{
-            let payload ={email};
-            fetch(conf.API+"/sendPassword",{method:"POST",headers, body:JSON.stringify(payload) } )
-            .then(response => response.json())
-            .then( data =>{result(data)})   
-            .catch( (e)=>{ reject(e) } )
-            //setTimeout(()=>{ result( {token:userToken}) },1000);
-        })
-    }
-
-    const gameTypes = ()=>{
-         let mode = "wb";
-        return new Promise( (result, reject)=>{
-        fetch(conf.API+`/gameTypes?c=slot&m=${mode}`,  {method:"GET",headers} )
-        .then(response => response.json())
-            .then( data =>{result(data)})   
-            .catch( (e)=>{ reject(e) } )
-        } )
-        //https://lobby-test.apiusoft.com/gameTypes?c=slot
-    }
-    const getBrandList=(category)=>{
-        let url = conf.API + `/brands?m=wb`;
-        url += category != "all" ? "&c="+category : "" 
-        //https://lobby-test.apiusoft.com/brands?c=slot
-        return new Promise( (result, reject)=>{ fetch(url, {method:"GET",headers} )
-            .then(response => response.json())
-            .then( data =>{result(data)})   
-            .catch( (e)=>{ reject(e) } )
-        } )
-    }
-
-    const getGameList=(category, section, page=1, currency='USD', xpage=20)=>{
-        let trashcode = "";
-        if ( typeof section =='object' && section.brand && section.brand =='DROPS & WINS') {
-            trashcode = 'DROP';
-        }else if (typeof section =='object' && section.brand && section.brand =='JUEGOS POPULARES'){
-            trashcode = 'POP';
+        },
+        listTypes: async () =>{
+            headers.Authorization = "Bearer " + sessionStorage.getItem("token");
+            return axios.get(`${conf.API}/types`, { headers });
+        },
+        addType: async (type) => {
+            headers.Authorization = "Bearer " + sessionStorage.getItem("token");
+            return axios.post(`${conf.API}/types`, type, { headers });
+        },
+        deleteTops: async (id) => {
+            headers.Authorization = "Bearer " + sessionStorage.getItem("token");
+            return axios.delete(`${conf.API}/topGame/${id}`, { headers }); 
         }
-        console.log("sectiosectionsectionn",section);
-        let mode = "wb";
-        let url=conf.API+`/games?c=${category}&m=${mode}&page=${page}&xpage=${xpage}&curr=${currency}`;
-        if( typeof section =='object' && section.brand && section.brand != "DROPS & WINS" && section.brand != "JUEGOS POPULARES"  ) url += `&b=${section.brand}`;
-        else if( typeof section =='object' && section.search ) url += `&g=${section.search}`;
-        else if(section=="TOP") url += `&o=200000`;
-        else if(section=="POP" || trashcode == 'POP') url += `&o=100000`;
-        else if(section=="NEW") url += `&n=true`;
-        else if( /BACC|RLIV|BJLIV|MWLIV|LOTTO|SICBO|TVLIV|DROP|CLASS|RULE|TABL|MEGA|FAST/.test(section)) url += `&t=${section}`; 
-        else if(trashcode == 'DROP'){
-            url += `&t=${"DROP"}`; 
-        }
-        return new Promise( (result, reject)=>{
-            fetch(url, {method:"GET",headers} )
-        .then(response => response.json())
-            .then( data =>{result(data)})   
-            .catch( (e)=>{ reject(e) } )
-        } )
     }
 
-    const getBalance=(userToken)=>{
-        return new Promise( (result, reject)=>{
-            fetch(conf.API+`/balance/${userToken}`,{method:"GET",headers})
-            .then(response => response.json())
-            .then( data =>{result(data)})   
-            .catch( (e)=>{ reject(e) } )
-        })
-    }
-    const getURLNovus=(url)=>{
-        return new Promise( (result, reject)=>{
-            fetch(url,{method:"GET",headers})
-            .then(response => response.json())
-            .then( data =>{result(data)})   
-            .catch( (e)=>{ reject(e) } )
-        })
-    }
-
-    const getFavGames =(userToken, category) =>{
-          let mode = "wb";
-        var url=conf.API+"/favs";
-        url += `?c=${category}&m=${mode}&t=${userToken}`
-        return new Promise( (result, reject)=>{
-            fetch(url,{method:"GET",headers} )
-        .then(response => response.json())
-            .then( data =>{result(data)})   
-            .catch( (e)=>{ reject(e) } )
-        } )
-    }
-
-    const saveFav =(userToken, gameId, action) =>{
-        var url=conf.API+"/saveFavs";
-        var payload = {action,g:gameId,t:userToken}
-        return new Promise( (result, reject)=>{
-            fetch(url,{method:"POST",headers, body:JSON.stringify(payload)} )
-        .then(response => response.json())
-            .then( data =>{result(data)})   
-            .catch( (e)=>{ reject(e) } )
-        } )
-    }
-
-    const register = (username, name,codephone, phone, email, password, date, operatorId,smscode, currency=conf.currency)=>{
-        //TODO: fecha de nacimiento
-        //TODO: operataorId para Golden Debe Venir
+    const provider = {
+        listByClient: async (params) => {
+            headers.Authorization = "Bearer " + sessionStorage.getItem("token");
+            let query = util.serialize(params)
+            return axios.get(`${conf.API}/games/providers?${query}`, { headers });
+        },
+        listByClientByName: async (params) => {
+            let clientName = params.clientName;
+            headers.Authorization = "Bearer " + sessionStorage.getItem("token");
+            return axios.get(`${conf.API}/games/providers?clientName=${clientName}`, { headers });
+        },
+        listBrands: async (provider) => {
+            headers.Authorization = "Bearer " + sessionStorage.getItem("token");
+            return axios.get(`${conf.API}/games/providers/${provider}/brands`, { headers });
+        },
+        listGames: async (clientId, provider = null, brand = null) => {
+            headers.Authorization = "Bearer " + sessionStorage.getItem("token");
+            let query = `clientId=${clientId}`;
+            if (provider) query = query + `&provider=${provider}`
+            if (brand) query = query + `&brand=${brand}`
+            return axios.get(`${conf.API}/games?${query}`, { headers });
+        },
+        removeBrands: async (payload) => {
+            const headers = {
+                Authorization: "Bearer " + sessionStorage.getItem("token"),
+                'Content-Type': 'application/json' 
+            };
+            let payload2 = {
+                clienteid: payload.clientId, 
+                provider: payload.provider,
+                action: payload.action,
+                brands: payload.brands,
+                category: payload.category,
+                type: payload.type,
+                original: payload.original,
+                direct: payload.direct
+            };
+            if (!payload2.category) delete payload2.category;
+            if (!payload2.type) delete payload2.type;
+            if (!payload2.original) delete payload2.original;
+            if (!payload2.direct) delete payload2.direct;
+            return axios.post(`${conf.API}/games/client/${payload.clientId}/provider/${payload.provider}`, payload2, { headers });
+        },
         
-        var url=conf.API+"/user";
-        var payload = {username, name, phone:codephone+phone, email, currency, password, date, smscode,country:conf.country, operatorId, doctype:"", document:"", birthday:date, domain:conf.domain, usertype:"X", org:conf.org}
-        return new Promise( (result, reject)=>{
-            fetch(url,{method:"POST",headers, body:JSON.stringify(payload)} )
-        .then(response => response.json())
-            .then( data =>{result(data)})   
-            .catch( (e)=>{ reject(e) } )
-        } )
-    }
-
-    const getMovements = (token, dateStringFrom, dateStringTo, filter)=>{
-        return new Promise( (result, reject)=>{
-            fetch(conf.API+`/wallet/${token}/${dateStringFrom}/${dateStringTo}/${filter}/movements`,{method:"GET"})
-            .then(response => response.json())
-            .then( data =>{ if(data.errorCode){ checkReject(data).then(r=> reject(r) ) } else result(data)})    
-            .catch( (e)=>{ reject(e) } )
-        })
-    }
-
-    const checkReject=(data)=>{
-       return new Promise( (result, reject) =>{
-        if(data.errorCode!='OLD_TOKEN' ) result(data)
-        else{
-            alert("SESION ABIERTA EN OTRO DISPOSITIVO");
-            sessionStorage.removeItem("user");
-            location.reload();
-            return;
-        }
-       })
-    }
-
-    const uploadFile = (fileName, base64file) => {
-        var url=conf.API+"/uploadFile";
-        var payload = {fileName, base64file}
-        return new Promise( (result, reject)=>{
-            fetch(url,{method:"POST",headers, body:JSON.stringify(payload)} )
-            .then(response => response.json())
-            .then( data =>{result(data)})   
-            .catch( (e)=>{ reject(e) } )
-        } )
-    }
-    const user={
-        preRegister:(username, email,codephone, phone)=>{
-            var url=conf.API+"/user/preRegister";
-            var payload = {username,email,phone:codephone+phone, org: conf.org}
-            return axios.post( url,payload,{headers} );
-            
-            /*return new Promise( (result, reject)=>{
-                fetch(url,{method:"POST",headers, body:JSON.stringify(payload)} )
-                .then(response => response.json())
-                .then( data =>{result(data)})   
-                .catch( (e)=>{ reject(e) } )
-            } )*/
-        }
-    }
-    const wallet = {
-        checkPreviewWithdrawal:(token)=>{
-            return new Promise( (result, reject)=>{
-                fetch(conf.API+`/checkRetailWithdrawal/${token}`,{method:"GET"})
-                .then(response => response.json())
-                .then( data =>{ if(data.errorCode){ checkReject(data).then(r=> reject(r) ) } else result(data)})    
-                .catch( (e)=>{ reject(e) } )
-            })
+        addBrands: async (payload) => {
+            headers.Authorization = "Bearer " + sessionStorage.getItem("token");
+            let payload2 = {
+                brands: payload.brands,
+                action: payload.action,
+                category: payload.category,
+                type: payload.type,
+                original: payload.original,
+                direct: payload.direct
+            }
+            if (!payload2.category) delete payload2.category
+            if (!payload2.type) delete payload2.type
+            if (!payload2.original) delete payload2.original
+            if (!payload2.direct) delete payload2.direct
+            return axios.post(`${conf.API}/games/client/${payload.clientId}/provider/${payload.provider}`, payload2 , { headers });
         },
-        retailWithdrawal:(token, amount)=>{
-            var url=conf.API+"/retailWithdrawal";
-        var payload = {token, amount}
-        return new Promise( (result, reject)=>{
-            fetch(url,{method:"POST",headers, body:JSON.stringify(payload)} )
-            .then(response => response.json())
-            .then( data =>{result(data)})   
-            .catch( (e)=>{ reject(e) } )
-        } )
+        listBrandsWithoutClient: async (params) => {
+            headers.Authorization = "Bearer " + sessionStorage.getItem("token");
+            let query
+            query = util.serialize(params)
+            return axios.get(`${conf.API}/games/client?${query}`, { headers });
         },
-        depositRetail:(token, cod)=>{
-            var url=conf.API+"/wallet/depositRetail";
-        var payload = {token, cod}
-        return new Promise( (result, reject)=>{
-            fetch(url,{method:"POST",headers, body:JSON.stringify(payload)} )
-            .then(response => response.json())
-            .then( data =>{result(data)})   
-            .catch( (e)=>{ reject(e) } )
-        } )
+    }
+
+    const games = {
+        list: async (params = '') => {
+            headers.Authorization = "Bearer " + sessionStorage.getItem("token");
+            if (params) { params = util.serialize(params) }
+            return axios.get(`${conf.API}/games?${params}`, { headers });
+        },
+        listCategories: async (params) => {
+            headers.Authorization = "Bearer " + sessionStorage.getItem("token");
+            let query = util.serialize(params)
+            return axios.get(`${conf.API}/games/category?${query}`, { headers });
+        },
+        listTypes: async (category) => {
+            headers.Authorization = "Bearer " + sessionStorage.getItem("token");
+            return axios.get(`${conf.API}/games/${category}/types`, { headers });
+        },
+        listProvider: async () => {
+            headers.Authorization = "Bearer " + sessionStorage.getItem("token");
+            return axios.get(`${conf.API}/games/providers`, { headers });
+        },
+        listBrands: async (provider) => {
+            headers.Authorization = "Bearer " + sessionStorage.getItem("token");
+            return axios.get(`${conf.API}/games/providers/${provider}/brands`, { headers });
+        },
+        listBrandsByClient: async (params) => {
+            headers.Authorization = "Bearer " + sessionStorage.getItem("token");
+            let query
+            query = util.serialize(params)
+            return axios.get(`${conf.API}/games/brandsByclient?${query}`, { headers });
+        },
+        listBrandsNotByClient: async (params) => {
+            headers.Authorization = "Bearer " + sessionStorage.getItem("token");
+            let query
+            query = util.serialize(params)
+            return axios.get(`${conf.API}/games/brandsNotByclient?${query}`, { headers });
+        },
+        saveGame: async (formData) => {
+            headers.Authorization = "Bearer " + sessionStorage.getItem("token");
+            headers["Content-Type"] = "multipart/form-data";
+            return axios.post(`${conf.API}/games`, formData, { headers });
+        },
+        remove: async (id) => {
+            headers.Authorization = "Bearer " + sessionStorage.getItem("token");
+            return axios.delete(`${conf.API}/games/${id}`, { headers });
+        },
+        listGamesbyclient: async (params) => {
+            headers.Authorization = "Bearer " + sessionStorage.getItem("token");
+            let query
+            query = util.serialize(params)
+            return axios.get(`${conf.API}/games?${query}`, { headers });
+        },
+        listGamesWithoutClient: async (params) => {
+            headers.Authorization = "Bearer " + sessionStorage.getItem("token");
+            let query = `clientId=${params.clientId}`;
+            if (params.provider) query = query + `&provider=${params.provider}`
+            if (params.brand) query = query + `&brand=${params.brand}`
+            if (params.search) query = query + `&search=${params.search}`
+            return axios.get(`${conf.API}/games/notwithclient?${query}&page=${params.page}&xpage=${params.xpage}`, { headers });
+        },
+
+        removeGamesbyclient: async (payload) => {
+            headers.Authorization = "Bearer " + sessionStorage.getItem("token");
+            return axios.delete(`${conf.API}/clients/${payload.clientId}/games/${payload.gameId}`, { headers });
+        },
+        addGametoClient: async (payload) => {
+            headers.Authorization = "Bearer " + sessionStorage.getItem("token");
+            return axios.post(`${conf.API}/clients/${payload.clientId}/games/${payload.gameId}`, payload, { headers });
+        },
+        listPragmaticFrbGames: async () => {
+            headers.Authorization = "Bearer " + sessionStorage.getItem("token");
+            return axios.get(`${conf.GATEWAYAPI}/freespins/frbGamesPragmatic`, { headers });
+        },
+    }
+
+    const gamers = {
+        list: async (params) => {
+            headers.Authorization = "Bearer " + sessionStorage.getItem("token");
+            if (params) { params = util.serialize(params) }
+            return axios.get(`${conf.API}/users?${params}`, { headers });
+        }
+    }
+
+    const adminusers = {
+        list: async (params) => {
+            headers.Authorization = "Bearer " + sessionStorage.getItem("token");
+            if (params) { params = util.serialize(params) }
+            return axios.get(`${conf.API}/adminusers?${params}`, { headers });
+        },
+        remove: async (id) => {
+            headers.Authorization = "Bearer " + sessionStorage.getItem("token");
+            return axios.delete(`${conf.API}/adminusers/${id}`, { headers });
+        },
+        save: async (payload) => {
+            headers.Authorization = "Bearer " + sessionStorage.getItem("token");
+            return axios.post(`${conf.API}/adminusers/register`, payload, { headers });
+        },
+        changePassword: async (payload) => {
+            headers.Authorization = "Bearer " + sessionStorage.getItem("token");
+            return axios.post(`${conf.API}/adminusers/change-password`, payload, { headers });
+        }
+    }
+
+    const work = {
+        list: async () => {
+            headers.Authorization = "Bearer " + sessionStorage.getItem("token");
+            return axios.get(`${conf.API}/work/`, { headers });
+        },
+        listUsers: async () => {
+            headers.Authorization = "Bearer " + sessionStorage.getItem("token");
+            return axios.get(`${conf.API}/work/users`, { headers });
+        },
+        listGroups: async () => {
+            headers.Authorization = "Bearer " + sessionStorage.getItem("token");
+            return axios.get(`${conf.API}/work/groups`, { headers });
+        },
+        listItemsByGroup: async (groupId) => {
+            headers.Authorization = "Bearer " + sessionStorage.getItem("token");
+            return axios.get(`${conf.API}/work/itemsbygroup/${groupId}`, { headers });
         }
 
     }
-   
+
+    const freespin = {
+        list: async (params) => {
+            headers.Authorization = "Bearer " + sessionStorage.getItem("token");
+            if (params) { params = util.serialize(params) }
+            return axios.get(`${conf.GATEWAYAPI}/freespins/?${params}`, { headers });
+        },
+
+        remove: async (id, provider) => {
+            headers.Authorization = "Bearer " + sessionStorage.getItem("token");
+            return axios.delete(`${conf.GATEWAYAPI}/freespins/${id}/${provider}`, { headers });
+        },
+
+        create: async (payload) => {
+            headers.Authorization = "Bearer " + sessionStorage.getItem("token");
+            return axios.post(`${conf.GATEWAYAPI}/freespins/`, payload, { headers });
+        },
+        authCampaign: async() =>{
+            let payload = {
+                clientId: "ADMINBO",
+                clientSecret: "123456"
+            }
+            return axios.get(`${conf.GATEWAYAPI}/auth`, payload);
+        },
+        syncCampaign: async() =>{
+            headers.Authorization = "Bearer " + sessionStorage.getItem("token");
+            return axios.get(`${conf.GATEWAYAPI}/first/syncCampaigns`);
+        },
+        listCampaigns: async (params) => {
+            headers.Authorization = "Bearer " + sessionStorage.getItem("token");
+            if (params) { params = util.serialize(params) }
+            return axios.get(`${conf.GATEWAYAPI}/campaigns/search?${params}`);
+        },
+        listPlatforms: async () => {
+            headers.Authorization = "Bearer " + sessionStorage.getItem("token");
+            return axios.get(`${conf.GATEWAYAPI}/platform`);
+        },
+        listBonus: async (params) =>{
+            headers.Authorization = "Bearer " + sessionStorage.getItem("token");
+            if (params) { params = util.serialize(params) }
+            return axios.get(`${conf.GATEWAYAPI}/bonus/search?${params}`);
+        },
+        saveBonus: async (payload)=>{
+            headers.Authorization = "Bearer " + sessionStorage.getItem("token");
+            return axios.post(`${conf.GATEWAYAPI}/first/assign`, payload);
+        },
+        deleteBonus: async (params)=>{
+            headers.Authorization = "Bearer " + sessionStorage.getItem("token");
+            return axios.delete(`${conf.GATEWAYAPI}/first/cancel/${params.code}`);
+        },
+        listFreeBets: async (params) => {
+            headers.Authorization = "Bearer " + sessionStorage.getItem("token");
+            if (params) { params = util.serialize(params) }
+            return axios.get(`${conf.GATEWAYAPI}/freebets/search?${params}`);
+        },
+        saveFreeBet: async (payload) => {
+            headers.Authorization = "Bearer " + sessionStorage.getItem("token");
+            return axios.post(`${conf.GATEWAYAPI}/freebets/assign/${payload.bonusId}`, payload);
+        },
+        deleteFreeBet: async (params) => {
+            headers.Authorization = "Bearer " + sessionStorage.getItem("token");
+            return axios.delete(`${conf.GATEWAYAPI}/freebets/cancel/${params.code}`);
+        }
+    }
+
+    const bonus = {
+        list: async (params) => {
+            headers.Authorization = sessionStorage.getItem("token");
+            if (params) { params = util.serialize(params) }
+            return axios.get(`${conf.APIUSERS}/bonus/api/bonus/?${params}`, { headers })
+        },
+        save: async (payload) => {
+            headers.Authorization = sessionStorage.getItem("token");
+            return axios.post(`${conf.APIUSERS}/bonus/api/bonus`, payload, { headers });
+        },
+    }
+
+    const trx = {
+        list: async (params = '') => {
+            headers.Authorization = "Bearer " + sessionStorage.getItem("token");
+            if (params) { params = util.serialize(params) }
+            return axios.get(`${conf.API}/trx/list?${params}`, { headers });
+        },
+        logs: async (params = '') => {
+            headers.Authorization = "Bearer " + sessionStorage.getItem("token");
+            if (params) { params = util.serialize(params) }
+            return axios.get(`${conf.API}/trx/logs?${params}`, { headers });
+        },
+        paymentDirect: async (payload) => {
+            headers.Authorization = "Bearer " + sessionStorage.getItem("token");
+            return axios.post(`${conf.API}/trx/paymentDirect`, payload, { headers });
+        }
+
+    }
+
+    const reports = {
+        list: async (params = '') => {
+            headers.Authorization = "Bearer " + sessionStorage.getItem("token");
+            if (params) { params = util.serialize(params) }
+            return axios.get(`${conf.API}/trx/summary?${params}`, { headers });
+        }
+    }
+
+    const brands = {
+        list: async (params) => {
+            headers.Authorization = "Bearer " + sessionStorage.getItem("token");
+            if (params) { params = util.serialize(params) }
+            return axios.get(`${conf.API}/brands?${params}`, { headers });
+        },
+        listBrandsByCategory: async () => {
+            headers.Authorization = "Bearer " + sessionStorage.getItem("token");
+            return axios.get(`${conf.API}/games/brandsByCategory`, { headers });
+        },
+        saveBrand: async (params, formData) => {
+            let brand = params.brand;
+            headers.Authorization = "Bearer " + sessionStorage.getItem("token");
+            headers["Content-Type"] = "multipart/form-data";
+            return axios.post(`${conf.API}/brands/uploadimage?brand=${brand}`, formData, { headers });
+        }
+    }
+
     return {
-        wallet, user,
-        getMovements,getGamesTypes, uploadFile, bankDeposit, withdrawal, getPaymethods, getPayLink, register,login, getGameList,getMyAccount,changePassword,sendPassword, gameTypes, getBrandList, getFavGames, saveFav, authInGame, getBalance,getURLNovus, saveMyAccount
+        login, client, trx, provider, games, gamers, brands, freespin, adminusers, reports, bonus, work
     }
-    
-})()
 
-export default ServerConnection
+})()
+export default serverConnection

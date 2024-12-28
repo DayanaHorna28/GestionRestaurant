@@ -1,148 +1,140 @@
 <script>
-  // @ts-nocheck
-
-  import { DuplicatedSessionListener } from "u-library-sass";
-  // @ts-nocheck
-  import backend from "./server.js";
-  import HomePage from "./pages/HomePage.svelte";
-  import TopBar from "./lib/components/NavBar/TopBar.svelte";
-  import MenuCategoryPage from "../src/lib/components/Menu/MenuCategoryPage.svelte";
-  import util from "./js/util";
-  import Configuration from "./config";
-  import ServerConnector from "./js/server-connector.js";
-  import EventManager from "./js/EventManager.js";
+	import alertify from 'alertifyjs';
+  import ProvidersReportsPage from "./pages/ProvidersReportsPage.svelte";
+  import ClientsReportsPage from "./pages/ClientsReportsPage.svelte";
+  import TrxManualPage from "./pages/TrxManualPage.svelte";
+  import TrxPage from "./pages/TrxPage.svelte";
+  import AdminPage from "./pages/AdminPage.svelte";
+  import ClientsPage from "./pages/ClientsPage.svelte";
+  import BrandsPage from "./pages/BrandsPage.svelte";
+  import PlayersPage from "./pages/PlayersPage.svelte";
+  import GamesPage from "./pages/GamesPage.svelte";
+  import TopBar from "./lib/TopBar.svelte";
   import { onMount } from "svelte";
-  import { watchResize } from "svelte-watch-resize";
 
-  import { t, Modal as Modalv2, Modal } from "u-library-sass";
+  import Login from "./lib/components/Login.svelte";
+  import util from "./js/util";
+  import HomePage from "./pages/HomePage.svelte";
+  import Menu from "./lib/components/menu/Menu.svelte";
+  import MondayPage from "./pages/MondayPage.svelte";
+  import BonusFirstPage from './pages/BonusFirstPage.svelte';
+  import FreeBetFirstPage from './pages/FreeBetFirstPage.svelte';
 
-  const conf = Configuration.getConfiguration();
-  const urlParams = new URLSearchParams(window.location.search);
-  const defaultView = urlParams.get("v") || "home";
 
-  let userState = "logout";
-  let user;
-  let usertoken = null;
-  let agregatorToken = null;
-  let horseGameUrl = "";
-  let esportsGameUrl = "";
-  let sportbookGameUrl = "";
-  let showLoginModal = false;
-  let showMainLoading = true;
-  let active_view = defaultView;
-  let sectionActive;
-  let url_game = "";
-  let searchValue;
-  let searchGames = [];
-  let topGames = [];
-  let popGames = [];
-  let newGames = [];
-  let dropGames = [];
-  let otherGames = [];
-  let slotFavGames = [];
-  let slotliveFavGames = [];
-  let virtualFavGames = [];
-  let scratchFavGames = [];
-  let slotAutoSelected = null;
-  let slotliveAutoSelected = null;
-  let virtualAutoselected = null;
-  let scratchAutoSelected = null;
-  let crashAutoSelected = null;
-  let mainLoadingMessage = "";
-  let GAMEAPI_URL = conf.GAMEAPI_URL;
-  let sportbookOptions;
-  let typegame;
-  let CLIENT_CODE = conf.CLIENT_CODE;
+  let authenticated = false;
+  let user = {};
+  let mainPromise;
+  let active_view = "home";
 
-  let activeNotification = false;
-  let params = "";
-  // let subModalOpened = "";
 
-  onMount(async () => {});
+  onMount(async () => {
+    mainPromise = checkUserIsLogged();
+  });
 
-  const onLogin = async () => {
-    getFavGames();
-    console.log(user, conf);
-    await UserHelper.connectToLobbySocket(user, conf);
-    let currentUrl = window.location.href;
-    let url = new URL(currentUrl);
-    let urlOriginal = url.origin;
-    window.location.href = urlOriginal;
-    //location.reload();
+  const checkUserIsLogged = async () => {
+    return new Promise((resolve, reject) => {
+      user = null;
+      let now = new Date();
+      let userStorage = sessionStorage.getItem("user");
+      if (userStorage) {
+        userStorage = JSON.parse(userStorage);
+        let expireTokenDate = new Date(userStorage.expireToken);
+        const diffTime = expireTokenDate - now;
+        if (diffTime > 0) {
+          user = userStorage;
+          authenticated = true;
+        } else {
+          alertify.warning("ADVERTENCIA su sesión a caducado");
+          sessionStorage.removeItem("user");
+          authenticated = false;
+        }
+      }
+      resolve(true);
+    });
   };
 
-  const onCloseGameModal = async () => {
-    let data = await backend.getBalance(user.agregatorToken);
-    user.balance = data.balance;
+  function onLogin(data) {
+    try {
+      user = data;
+      let token_ = util.parseJwt(user.access_token);
+      user.expireToken = new Date(token_.exp * 1000);
+      sessionStorage.setItem("user", JSON.stringify(user));
+      sessionStorage.setItem("token", user.access_token);
+      authenticated = true;
+    } catch (error) {
+      alertify.error("Error", error);
+    }
+  }
+
+  const onLogout = () => {
+    alertify.confirm("Cuidado",`Seguro de <b>Cerrar Sesión</b>?`, () => {
+      try {
+        sessionStorage.removeItem("user");
+        authenticated = false;
+        alertify.success("Procesado!");
+      } catch (error) {
+        alertify.error("Error al Cerrar Sesión");
+      }
+    },() => {});
   };
 
-  let loginModalOpen = false;
-  let signupModalOpen = false;
-  let modalOpened = "login";
-
-  const onOpenLogin = () => {
-    loginModalOpen = true;
-    signupModalOpen = false;
-    modalOpened = "login";
-    setTimeout(() => {
-      document.body.removeAttribute("style");
-    }, 100);
+  const onCategoryChange = async (cat) => {
+    active_view = cat;
   };
 </script>
 
-<div class="main-wrapper" use:watchResize={resizeIframe}>
-  <TopBar
-    bind:loginModalOpen
-    bind:signupModalOpen
-    bind:modalOpened
-    bind:userState
-    bind:active_view
-    bind:user
-    bind:showLoginModal
-    bind:showMainLoading
-    {openChatLive}
-    {onLogin}
-    {onOpenLogin}
-    {onOpenSignup}
-    {onCategoryChange}
-    {onOpenPromotions}
-  />
-
-  <div class="main-content">
-    {#if active_view == "home"}
-      <HomePage
-        bind:loginModalOpen
-        bind:GAMEAPI_URL
-        bind:active_view
-        bind:userState
-        onOpenGame={(game) => openGame(game)}
-        bind:topGames
-        bind:popGames
-        bind:newGames
-        bind:dropGames
-        bind:otherGames
-        bind:user
-        bind:favGames={slotFavGames}
-        {onCategoryChange}
-        {onOpenPromotions}
-        {onOpenProviders}
-      />
+<div class="bo-main-wrapp">
+  {#await mainPromise}
+    Cargando...
+  {:then d}
+    {#if authenticated}
+      <div class="body-wrapp">
+        <TopBar userLoged={user} {onLogout} />
+        <Menu bind:active_view {onCategoryChange}></Menu>
+        {#if active_view == "home"}
+          <HomePage></HomePage>
+        {:else if active_view == "games"}
+          <GamesPage></GamesPage>
+        {:else if active_view == "brands"}
+          <BrandsPage></BrandsPage>
+        {:else if active_view == "clients"}
+          <ClientsPage></ClientsPage>
+        {:else if active_view == "users"}
+          <PlayersPage></PlayersPage>
+        {:else if active_view == "admins"}
+          <AdminPage></AdminPage>
+        {:else if active_view == "transactions"}
+          <TrxPage></TrxPage>
+        {:else if active_view == "direct_trx"}
+          <TrxManualPage></TrxManualPage>
+        {:else if active_view == "provider"}
+          <ProvidersReportsPage></ProvidersReportsPage>
+        {:else if active_view == "client"}
+          <ClientsReportsPage></ClientsReportsPage>
+        {:else if active_view == "monday"}
+          <MondayPage></MondayPage>
+        {:else if active_view == "bonus"}
+          <BonusFirstPage></BonusFirstPage> 
+        {:else if active_view == "freebet"}
+          <FreeBetFirstPage></FreeBetFirstPage> 
+        {/if}
+      </div>
+    {:else if mainPromise != undefined}
+      <Login {onLogin} />
     {/if}
-  </div>
+  {/await}
 </div>
 
 <style>
-  @media only screen and (max-width: 1200px) {
+  .bo-main-wrapp {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+    width: 100%;
   }
-  @media only screen and (min-width: 1200px) {
-    .main-wrapper {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-    }
-    .main-content {
-      width: 100%;
-    }
+  .body-wrapp {
+    width: 100%;
+    height: 100%;
   }
 </style>
